@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: phy110-twrp-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   MANIFEST_URL: https://github.com/TWRP-Test/platform_manifest_twrp_aosp.git
   MANIFEST_BRANCH: twrp-16.0
