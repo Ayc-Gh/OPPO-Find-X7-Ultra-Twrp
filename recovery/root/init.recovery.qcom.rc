@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: Apache-2.0
+import /init.recovery.wifi.rc
+
+on early-fs
+    write /proc/sys/kernel/firmware_config/force_sysfs_fallback 1
+
+on fs
+    wait /dev/block/platform/soc/${ro.boot.bootdevice} 10
+    symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
+    chmod 0660 /dev/qseecom
+    chown system drmrpc /dev/qseecom
+    mkdir /mnt/vendor 0775 shell system
+    mkdir /mnt/vendor/persist 0775 system system
+    install_keyring
+
+on property:twrp.modules.loaded=true
+    exec - root root -- /system/bin/sh /system/bin/load-phy110-modules.sh base
+    exec - root root -- /system/bin/sh /system/bin/prepare-phy110-stock.sh
+
+    # PHY110 stock explicitly boots ADSP before requesting SSR. OTG depends on it.
+    wait /sys/kernel/boot_adsp/boot 10
+    write /sys/kernel/boot_adsp/boot 1
+    wait /sys/kernel/boot_adsp/ssr 10
+    write /sys/kernel/boot_adsp/ssr 1
+
+    setprop twrp.phy110.services start
+
+on property:twrp.phy110.services=start
+    start vendor.qseecomd
+    start vendor.qseecom-aidl
+    start vendor.keymint-qti
+    start vendor.gatekeeper_default
+    start vendor.weaver_nxp
+    start vendor.boot-qti
+    start vendor.health-default
+    setprop sys.boot_completed 1
+
+service vendor.qseecomd /vendor/bin/qseecomd
+    socket notify-topology stream 660 system drmrpc
+    class core
+    user root
+    group root drmrpc
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.qseecom-aidl /vendor/bin/hw/vendor.qti.hardware.qseecom@1.0-service
+    class hal
+    user system
+    group system drmrpc
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.keymint-qti /vendor/bin/hw/android.hardware.security.keymint-service-qti
+    class early_hal
+    user system
+    group system drmrpc
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.gatekeeper_default /vendor/bin/hw/android.hardware.gatekeeper-service-qti
+    class early_hal
+    user system
+    group system
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.weaver_nxp /odm/bin/hw/android.hardware.weaver-service.nxp
+    class hal
+    user root
+    group root drmrpc
+    capabilities WAKE_ALARM
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.boot-qti /vendor/bin/hw/android.hardware.boot-service.qti
+    class early_hal
+    user root
+    group root
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.health-default /vendor/bin/hw/android.hardware.health-service.qti
+    class hal
+    user root
+    group root
+    capabilities WAKE_ALARM BLOCK_SUSPEND
+    file /dev/kmsg w
+    disabled
+    seclabel u:r:recovery:s0
