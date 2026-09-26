@@ -1,0 +1,18 @@
+kernel/touch/oplus_bsp_synaptics_tcm2.ko: kernel/touch/oplus_bsp_fw_update.ko kernel/touch/panel_event_notifier.ko kernel/touch/oplus_bsp_tp_custom.ko kernel/touch/oplus_bsp_tp_notify.ko
+kernel/touch/oplus_bsp_fw_update.ko:
+kernel/touch/panel_event_notifier.ko:
+kernel/touch/oplus_bsp_tp_custom.ko:
+kernel/touch/oplus_bsp_tp_notify.ko:
+kernel/adsp/adsp_loader_dlkm.ko:
+kernel/charger/oplus_chg_v2.ko:
+kernel/tee/qseecom_proxy.ko: kernel/tee/smcinvoke_dlkm.ko
+kernel/tee/smcinvoke_dlkm.ko:
+kernel/nfc/stm_st54se_gpio.ko:
+kernel/nfc/nxp-nci.ko:
+kernel/wifi/qca_cld3_kiwi_v2.ko: kernel/wifi/cnss2.ko kernel/wifi/cfg80211.ko kernel/wifi/ipam.ko kernel/wifi/wlan_firmware_service.ko
+kernel/wifi/cnss2.ko: kernel/wifi/cnss_utils.ko kernel/wifi/cnss_prealloc.ko
+kernel/wifi/cnss_utils.ko:
+kernel/wifi/cnss_prealloc.ko:
+kernel/wifi/cfg80211.ko:
+kernel/wifi/ipam.ko:
+kernel/wifi/wlan_firmware_service.ko:
