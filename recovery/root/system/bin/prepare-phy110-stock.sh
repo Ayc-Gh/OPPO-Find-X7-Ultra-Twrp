@@ -45,15 +45,18 @@ resetprop ro.board.first_api_level 34
 resetprop ro.board.api_level 34
 resetprop ro.vendor.api_level 34
 resetprop ro.vndk.version 34
-setprop crypto.ready 1
-
 # Publish which stock components are actually available before init starts them.
+# Crypto readiness is never reported until the complete required chain exists
+# and the corresponding recovery-domain services are actually running.
+crypto_missing=0
 for pair in \
     qseecomd:/vendor/bin/qseecomd \
     qseecom_aidl:/vendor/bin/hw/vendor.qti.hardware.qseecom@1.0-service \
     keymint:/vendor/bin/hw/android.hardware.security.keymint-service-qti \
     gatekeeper:/vendor/bin/hw/android.hardware.gatekeeper-service-qti \
-    weaver:/odm/bin/hw/android.hardware.weaver-service.nxp; do
+    weaver:/odm/bin/hw/android.hardware.weaver-service.nxp \
+    boot:/vendor/bin/hw/android.hardware.boot-service.qti \
+    health:/vendor/bin/hw/android.hardware.health-service.qti; do
     name=${pair%%:*}
     path=${pair#*:}
     if [ -x "$path" ]; then
@@ -61,5 +64,19 @@ for pair in \
     else
         setprop "twrp.phy110.stock.$name" missing
         log "missing stock component: $path"
+        case "$name" in
+            qseecomd|qseecom_aidl|keymint|gatekeeper|weaver)
+                crypto_missing=$((crypto_missing + 1))
+                ;;
+        esac
     fi
 done
+
+if [ "$crypto_missing" -eq 0 ]; then
+    setprop twrp.phy110.stock.crypto ready
+    log "stock crypto component set is complete"
+else
+    setprop twrp.phy110.stock.crypto degraded
+    setprop crypto.ready 0
+    log "stock crypto component set is incomplete: $crypto_missing required component(s) missing"
+fi
