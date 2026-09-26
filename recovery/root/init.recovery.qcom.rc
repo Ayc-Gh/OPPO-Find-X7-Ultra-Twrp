@@ -23,19 +23,28 @@ on property:twrp.modules.loaded=true
     wait /sys/kernel/boot_adsp/ssr 10
     write /sys/kernel/boot_adsp/ssr 1
 
+    # Stock /vendor and /odm init directories are parsed by Android init. Stop
+    # their Android-mode instances before launching recovery-domain wrappers.
+    stop vendor.qseecomd
+    stop qseecom-service
+    stop vendor.keymint-qti
+    stop vendor.gatekeeper_default
+    stop vendor.weaver_nxp
+    stop vendor.boot-qti
+    stop vendor.health-default
     setprop twrp.phy110.services start
 
 on property:twrp.phy110.services=start
-    start vendor.qseecomd
-    start vendor.qseecom-aidl
-    start vendor.keymint-qti
-    start vendor.gatekeeper_default
-    start vendor.weaver_nxp
-    start vendor.boot-qti
-    start vendor.health-default
+    start phy110-qseecomd
+    start phy110-qseecom-aidl
+    start phy110-keymint-qti
+    start phy110-gatekeeper
+    start phy110-weaver
+    start phy110-boot-qti
+    start phy110-health
     setprop sys.boot_completed 1
 
-service vendor.qseecomd /vendor/bin/qseecomd
+service phy110-qseecomd /vendor/bin/qseecomd
     socket notify-topology stream 660 system drmrpc
     class core
     user root
@@ -43,28 +52,28 @@ service vendor.qseecomd /vendor/bin/qseecomd
     disabled
     seclabel u:r:recovery:s0
 
-service vendor.qseecom-aidl /vendor/bin/hw/vendor.qti.hardware.qseecom@1.0-service
+service phy110-qseecom-aidl /vendor/bin/hw/vendor.qti.hardware.qseecom@1.0-service
     class hal
     user system
     group system drmrpc
     disabled
     seclabel u:r:recovery:s0
 
-service vendor.keymint-qti /vendor/bin/hw/android.hardware.security.keymint-service-qti
+service phy110-keymint-qti /vendor/bin/hw/android.hardware.security.keymint-service-qti
     class early_hal
     user system
     group system drmrpc
     disabled
     seclabel u:r:recovery:s0
 
-service vendor.gatekeeper_default /vendor/bin/hw/android.hardware.gatekeeper-service-qti
+service phy110-gatekeeper /vendor/bin/hw/android.hardware.gatekeeper-service-qti
     class early_hal
     user system
     group system
     disabled
     seclabel u:r:recovery:s0
 
-service vendor.weaver_nxp /odm/bin/hw/android.hardware.weaver-service.nxp
+service phy110-weaver /odm/bin/hw/android.hardware.weaver-service.nxp
     class hal
     user root
     group root drmrpc
@@ -72,14 +81,14 @@ service vendor.weaver_nxp /odm/bin/hw/android.hardware.weaver-service.nxp
     disabled
     seclabel u:r:recovery:s0
 
-service vendor.boot-qti /vendor/bin/hw/android.hardware.boot-service.qti
+service phy110-boot-qti /vendor/bin/hw/android.hardware.boot-service.qti
     class early_hal
     user root
     group root
     disabled
     seclabel u:r:recovery:s0
 
-service vendor.health-default /vendor/bin/hw/android.hardware.health-service.qti
+service phy110-health /vendor/bin/hw/android.hardware.health-service.qti
     class hal
     user root
     group root
