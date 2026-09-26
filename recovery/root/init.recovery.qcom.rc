@@ -32,16 +32,34 @@ on property:twrp.modules.loaded=true
     stop vendor.weaver_nxp
     stop vendor.boot-qti
     stop vendor.health-default
-    setprop twrp.phy110.services start
+    setprop twrp.phy110.services prepared
 
-on property:twrp.phy110.services=start
+on property:twrp.phy110.stock.boot=present
+    start phy110-boot-qti
+
+on property:twrp.phy110.stock.health=present
+    start phy110-health
+
+on property:twrp.phy110.stock.crypto=ready
+    setprop twrp.phy110.crypto starting-qsee
     start phy110-qseecomd
     start phy110-qseecom-aidl
+
+on property:init.svc.phy110-qseecomd=running && property:init.svc.phy110-qseecom-aidl=running
+    setprop twrp.phy110.crypto starting-key-services
     start phy110-keymint-qti
     start phy110-gatekeeper
     start phy110-weaver
-    start phy110-boot-qti
-    start phy110-health
+
+on property:init.svc.phy110-keymint-qti=running && property:init.svc.phy110-gatekeeper=running && property:init.svc.phy110-weaver=running
+    setprop twrp.phy110.crypto ready
+    setprop crypto.ready 1
+
+on property:twrp.phy110.stock.crypto=degraded
+    setprop twrp.phy110.crypto degraded
+    setprop crypto.ready 0
+
+on property:servicemanager.ready=true
     setprop sys.boot_completed 1
 
 service phy110-qseecomd /vendor/bin/qseecomd
