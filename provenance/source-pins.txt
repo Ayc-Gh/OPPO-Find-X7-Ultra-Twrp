@@ -1,0 +1,14 @@
+Target device: OPPO Find X7 Ultra PHY110 / OP565FL1 / project 22111
+Stock calibration build: PHY110_16.0.10.500(CN01)
+Stock SPL observed: 2026-08-01
+Stock kernel observed: 6.1.141-android14-11-o-gb6893081c037
+Calibration capture date: 2026-09-26
+
+TWRP-Test/platform_manifest_twrp_aosp twrp-16.0:
+6f074703a0ab31f22518b1a94331b358190237ba
+
+TWRP-Test/android_bootable_recovery twrp-16.0:
+640eae012e65e9058baf8a8480ea5f0e4850fd3c
+
+Legacy reference only (not copied as architecture):
+adontoo/twrp_device_oplus_sm86xx@81061909b76fc6dac1a1ae5c3ddb04b1d4a3e027
