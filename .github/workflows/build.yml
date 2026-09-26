@@ -54,7 +54,7 @@ jobs:
         run: |
           set -euxo pipefail
           git clone --depth=1 "https://github.com/${GITHUB_REPOSITORY}.git" "$RUNNER_TEMP/device-tree"
-          "$RUNNER_TEMP/device-tree/tests/run_host_audit.sh" | tee "$RUNNER_TEMP/host-audit.log"
+          bash "$RUNNER_TEMP/device-tree/tests/run_host_audit.sh" | tee "$RUNNER_TEMP/host-audit.log"
           git -C "$RUNNER_TEMP/device-tree" rev-parse HEAD | tee "$RUNNER_TEMP/device-tree.sha"
 
       - name: Sync pinned TWRP upstream
