@@ -63,6 +63,9 @@ BOARD_EXCLUDE_KERNEL_FROM_RECOVERY_IMAGE := true
 # partitions directly, so do not fall back to legacy system/vendor layouts.
 TARGET_COPY_OUT_VENDOR := vendor
 TARGET_COPY_OUT_ODM := odm
+# Android 16 requires image metadata when ODM has its own output path.
+# This does not embed stock ODM contents into recovery.
+BOARD_ODMIMAGE_FILE_SYSTEM_TYPE := ext4
 
 # Crypto / storage
 BOARD_USES_METADATA_PARTITION := true
