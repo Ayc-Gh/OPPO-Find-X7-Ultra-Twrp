@@ -1,0 +1,23 @@
+# PHY110 recovery properties
+ro.adb.secure=0
+ro.boot.dynamic_partitions=true
+ro.charger.enable_suspend=1
+persist.sys.fuse.passthrough.enable=true
+external_storage.projid.enabled=1
+external_storage.casefold.enabled=1
+external_storage.sdcardfs.enabled=0
+
+# The extracted PHY110 stock build explicitly disables SPU Gatekeeper.
+vendor.gatekeeper.disable_spu=true
+vendor.gatekeeper.is_security_level_spu=0
+
+# Stock vendor ABI baseline.
+ro.product.first_api_level=34
+ro.board.first_api_level=34
+ro.board.api_level=34
+ro.vendor.api_level=34
+ro.vndk.version=34
+
+# OTG capability; USB host bring-up is completed after ADSP boot/SSR.
+persist.sys.isUsbOtgEnabled=true
+persist.sys.oem.otg_support=true
