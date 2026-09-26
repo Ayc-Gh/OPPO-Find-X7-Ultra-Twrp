@@ -64,8 +64,9 @@ jobs:
           mkdir -p "$HOME/twrp"
           cd "$HOME/twrp"
           repo init --depth=1 -u "$MANIFEST_URL" -b "$MANIFEST_BRANCH"
-          git -C .repo/manifests fetch --depth=1 origin "$MANIFEST_SHA"
-          git -C .repo/manifests checkout --detach "$MANIFEST_SHA"
+          CURRENT_MANIFEST_SHA=$(git -C .repo/manifests rev-parse HEAD)
+          echo "manifest HEAD=$CURRENT_MANIFEST_SHA"
+          test "$CURRENT_MANIFEST_SHA" = "$MANIFEST_SHA"
           for attempt in 1 2; do
             if repo sync -c -j2 --force-sync --no-clone-bundle --no-tags; then
               break
@@ -73,7 +74,6 @@ jobs:
             [ "$attempt" -eq 2 ] && exit 1
             sleep 15
           done
-          echo "manifest HEAD=$(git -C .repo/manifests rev-parse HEAD)"
           git -C bootable/recovery fetch --depth=1 origin "$RECOVERY_SHA"
           git -C bootable/recovery checkout --detach "$RECOVERY_SHA"
           test "$(git -C bootable/recovery rev-parse HEAD)" = "$RECOVERY_SHA"
