@@ -97,7 +97,9 @@ jobs:
       - name: Build recovery.img
         shell: bash
         run: |
-          set -euxo pipefail
+          # AOSP/TWRP envsetup is not compatible with Bash nounset (-u).
+          # Keep fail-fast and pipeline error propagation without nounset.
+          set -exo pipefail
           cd "$HOME/twrp"
           export ALLOW_MISSING_DEPENDENCIES=true
           export USE_CCACHE=1
