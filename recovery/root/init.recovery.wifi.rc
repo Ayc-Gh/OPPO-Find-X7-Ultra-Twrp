@@ -5,12 +5,16 @@ on property:twrp.modules.loaded=true
     exec - root root -- /system/bin/sh /system/bin/load-phy110-modules.sh wifi
 
 on property:twrp.wifi.modules=ready
-    start vendor.qrtr-ns
-    start vendor.rmt_storage
-    start vendor.cnss-daemon
+    # Avoid duplicate Android-mode services from the stock vendor init set.
+    stop vendor.rmt_storage
+    stop cnss-daemon
+    stop wpa_supplicant
+    start phy110-qrtr-ns
+    start phy110-rmt-storage
+    start phy110-cnss-daemon
     mkdir /tmp/recovery 0770 root root
     mkdir /tmp/recovery/sockets 0770 root root
-    start vendor.wpa_supplicant
+    start phy110-wpa-supplicant
 
 # Compatibility triggers for older TWRP Wi-Fi frontends.
 on property:twrp.insmodko=1
@@ -19,7 +23,7 @@ on property:twrp.insmodko=1
 on property:qcomwlan.driver.load=true
     exec - root root -- /system/bin/sh /system/bin/load-phy110-modules.sh wifi
 
-service vendor.qrtr-ns /vendor/bin/qrtr-ns -f
+service phy110-qrtr-ns /vendor/bin/qrtr-ns -f
     class core
     user root
     group root
@@ -27,7 +31,7 @@ service vendor.qrtr-ns /vendor/bin/qrtr-ns -f
     disabled
     seclabel u:r:recovery:s0
 
-service vendor.rmt_storage /vendor/bin/rmt_storage
+service phy110-rmt-storage /vendor/bin/rmt_storage
     class core
     user root
     group root
@@ -35,7 +39,7 @@ service vendor.rmt_storage /vendor/bin/rmt_storage
     disabled
     seclabel u:r:recovery:s0
 
-service vendor.cnss-daemon /vendor/bin/cnss-daemon -n -l
+service phy110-cnss-daemon /vendor/bin/cnss-daemon -n -l
     class main
     user root
     group root system inet net_admin wifi
@@ -43,7 +47,7 @@ service vendor.cnss-daemon /vendor/bin/cnss-daemon -n -l
     disabled
     seclabel u:r:recovery:s0
 
-service vendor.wpa_supplicant /vendor/bin/hw/wpa_supplicant -Dnl80211 -iwlan0 -dd -O/tmp/recovery/sockets -c/vendor/etc/wifi/wpa_supplicant.conf
+service phy110-wpa-supplicant /vendor/bin/hw/wpa_supplicant -Dnl80211 -iwlan0 -dd -O/tmp/recovery/sockets -c/vendor/etc/wifi/wpa_supplicant.conf
     class main
     user root
     group root wifi inet net_admin
