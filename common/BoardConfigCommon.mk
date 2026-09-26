@@ -59,6 +59,11 @@ BOARD_MKBOOTIMG_ARGS += --pagesize $(BOARD_KERNEL_PAGESIZE)
 BOARD_RAMDISK_USE_LZ4 := true
 BOARD_EXCLUDE_KERNEL_FROM_RECOVERY_IMAGE := true
 
+# Partition output paths. Recovery mounts the installed stock vendor/odm
+# partitions directly, so do not fall back to legacy system/vendor layouts.
+TARGET_COPY_OUT_VENDOR := vendor
+TARGET_COPY_OUT_ODM := odm
+
 # Crypto / storage
 BOARD_USES_METADATA_PARTITION := true
 TARGET_USERIMAGES_USE_F2FS := true
@@ -78,6 +83,7 @@ TW_INCLUDE_REPACKTOOLS := true
 TW_INCLUDE_RESETPROP := true
 TW_INCLUDE_ZSTD := true
 TW_USE_TOOLBOX := true
+TW_EXCLUDE_APEX := true
 
 # Filesystems
 RECOVERY_SDCARD_ON_DATA := true
