@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   expand-source:
-    if: ${{ hashFiles('device-tree-source.tar.gz.b64') != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout bootstrap commit
