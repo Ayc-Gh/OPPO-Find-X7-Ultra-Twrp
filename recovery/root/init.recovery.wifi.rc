@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Wi-Fi is sourced from the currently installed ColorOS vendor stack.
 
-on property:twrp.modules.loaded=true
+on property:twrp.phy110.crypto=ready
     exec - root root -- /system/bin/sh /system/bin/load-phy110-modules.sh wifi
 
 on property:twrp.wifi.modules=ready

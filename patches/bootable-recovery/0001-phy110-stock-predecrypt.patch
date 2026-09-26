@@ -1,0 +1,70 @@
+diff --git a/partitionmanager.cpp b/partitionmanager.cpp
+--- a/partitionmanager.cpp
++++ b/partitionmanager.cpp
+@@ -508,9 +508,9 @@
+         }
+     }
+ #ifndef USE_VENDOR_LIBS
+-    if (ven)
+-        ven->UnMount(Display_Error);
++    // PHY110 uses the currently installed stock vendor as the userspace ABI
++    // source for KeyMint/Gatekeeper/QSEE and Wi-Fi; keep it mounted.
+     if (sys)
+         sys->UnMount(Display_Error);
+ #endif
+ 
+@@ -555,10 +555,41 @@
+     if (settings_partition) {
+         Setup_Settings_Storage_Partition(settings_partition);
+     }
+ 
+ #ifdef TW_INCLUDE_CRYPTO
+     DataManager::SetValue(TW_IS_ENCRYPTED, 1);
+-    Decrypt_Data();
++
++    // PHY110 deliberately consumes the currently installed stock vendor/ODM
++    // stack instead of embedding dated proprietary blobs in the Recovery
++    // ramdisk. Mount the ABI and module partitions before asking init to start
++    // recovery-domain wrappers for QSEE, KeyMint, Gatekeeper and Weaver.
++    for (const char* path : {"/vendor", "/odm", "/vendor_dlkm", "/system_dlkm",
++                             "/mnt/vendor/persist"}) {
++        if (TWPartition* part = Find_Partition_By_Path(path);
++            part && !part->Is_Mounted() && !part->Mount(Display_Error)) {
++            LOGERR("PHY110 predecrypt: unable to mount %s\n", path);
++        }
++    }
++
++    android::base::SetProperty("twrp.phy110.crypto", "waiting");
++    android::base::SetProperty("twrp.phy110.predecrypt", "1");
++
++    // Android init runs independently from the TWRP process. Wait only for a
++    // bounded interval and accept success solely when the recovery-domain
++    // KeyMint/Gatekeeper/Weaver chain reports that all services are running.
++    constexpr int kPhy110CryptoWaitIterations = 150;
++    for (int i = 0; i < kPhy110CryptoWaitIterations; ++i) {
++        if (android::base::GetProperty("twrp.phy110.crypto", "") == "ready") break;
++        usleep(100000);
++    }
++
++    if (android::base::GetProperty("twrp.phy110.crypto", "") == "ready") {
++        LOGINFO("PHY110 predecrypt: stock crypto services are ready\n");
++        Decrypt_Data();
++    } else {
++        LOGERR("PHY110 predecrypt: crypto services did not become ready; "
++               "skipping automatic FBE attempt\n");
++    }
+ #endif
+ 
+     Update_System_Details(true);
+@@ -2298,9 +2298,10 @@
+     // Also unmounts boot if boot is mountable
+     LOGINFO("Unmounting main partitions...\n");
+ 
+     TWPartition *Partition = Find_Partition_By_Path("/vendor");
+ 
+-    if (Partition) UnMount_By_Path("/vendor", false);
++    // PHY110 keeps stock vendor mounted for recovery-domain crypto and Wi-Fi
++    // services. This source patch is applied only by the PHY110 build.
+     Partition = Find_Partition_By_Path(Get_Android_Root_Path());
+     if (Partition) UnMount_By_Path(Get_Android_Root_Path(), true);
+     Partition = Find_Partition_By_Path("/product");

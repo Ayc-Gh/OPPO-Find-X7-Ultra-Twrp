@@ -13,18 +13,14 @@ on fs
     mkdir /mnt/vendor/persist 0775 system system
     install_keyring
 
-on property:twrp.modules.loaded=true
+on property:twrp.phy110.predecrypt=1
+    # The pinned bootable/recovery patch mounts the stock ABI partitions before
+    # this trigger and waits for twrp.phy110.crypto=ready before FBE decryption.
     exec - root root -- /system/bin/sh /system/bin/load-phy110-modules.sh base
     exec - root root -- /system/bin/sh /system/bin/prepare-phy110-stock.sh
 
-    # PHY110 stock explicitly boots ADSP before requesting SSR. OTG depends on it.
-    wait /sys/kernel/boot_adsp/boot 10
-    write /sys/kernel/boot_adsp/boot 1
-    wait /sys/kernel/boot_adsp/ssr 10
-    write /sys/kernel/boot_adsp/ssr 1
-
-    # Stock /vendor and /odm init directories are parsed by Android init. Stop
-    # their Android-mode instances before launching recovery-domain wrappers.
+    # If stock init services were parsed in this boot mode, stop their Android
+    # domains before launching the recovery-domain wrappers below.
     stop vendor.qseecomd
     stop qseecom-service
     stop vendor.keymint-qti
@@ -54,6 +50,14 @@ on property:init.svc.phy110-qseecomd=running && property:init.svc.phy110-qseecom
 on property:init.svc.phy110-keymint-qti=running && property:init.svc.phy110-gatekeeper=running && property:init.svc.phy110-weaver=running
     setprop twrp.phy110.crypto ready
     setprop crypto.ready 1
+
+# OTG/PMIC initialization is intentionally after the crypto-ready handshake so
+# bounded ADSP waits can never delay the first FBE attempt.
+on property:twrp.phy110.crypto=ready
+    wait /sys/kernel/boot_adsp/boot 10
+    write /sys/kernel/boot_adsp/boot 1
+    wait /sys/kernel/boot_adsp/ssr 10
+    write /sys/kernel/boot_adsp/ssr 1
 
 on property:twrp.phy110.stock.crypto=degraded
     setprop twrp.phy110.crypto degraded

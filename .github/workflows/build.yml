@@ -82,6 +82,15 @@ jobs:
           echo "bootable/recovery HEAD=$CURRENT_RECOVERY_SHA"
           test "$CURRENT_RECOVERY_SHA" = "$RECOVERY_SHA"
 
+          # Apply the narrow PHY110 stock-vendor lifecycle hook only after the
+          # exact upstream recovery revision has been verified.
+          PATCH="$RUNNER_TEMP/device-tree/patches/bootable-recovery/0001-phy110-stock-predecrypt.patch"
+          test -f "$PATCH"
+          git -C bootable/recovery apply --check "$PATCH"
+          git -C bootable/recovery apply "$PATCH"
+          git -C bootable/recovery diff --check
+          grep -Fq 'twrp.phy110.predecrypt' bootable/recovery/partitionmanager.cpp
+
       - name: Install PHY110 tree and create source lock
         shell: bash
         run: |
@@ -97,6 +106,9 @@ jobs:
           cp "$RUNNER_TEMP/host-audit.log" "$RUNNER_TEMP/dist/host-audit.log"
           printf '%s\n' "$MANIFEST_SHA" > "$RUNNER_TEMP/dist/manifest-anchor.sha"
           printf '%s\n' "$RECOVERY_SHA" > "$RUNNER_TEMP/dist/recovery.sha"
+          git -C bootable/recovery diff --binary > "$RUNNER_TEMP/dist/bootable-recovery-local.patch"
+          sha256sum "$RUNNER_TEMP/device-tree/patches/bootable-recovery/0001-phy110-stock-predecrypt.patch" \
+            > "$RUNNER_TEMP/dist/phy110-upstream-patch.sha256"
 
       - name: Build recovery.img
         shell: bash
@@ -166,6 +178,7 @@ jobs:
           TAG="build-${GITHUB_RUN_ID}"
           gh release create "$TAG" \
             "$IMG" "$IMG.sha256" source-manifest.xml host-audit.log image-size.txt \
+            bootable-recovery-local.patch phy110-upstream-patch.sha256 \
             --repo "$GITHUB_REPOSITORY" \
             --title "PHY110 TWRP 16 build ${GITHUB_RUN_ID}" \
             --notes "Pinned TWRP-Test upstream build for OPPO Find X7 Ultra PHY110. See attached SHA-256 and source-manifest.xml."

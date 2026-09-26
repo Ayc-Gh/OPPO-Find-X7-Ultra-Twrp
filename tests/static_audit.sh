@@ -24,7 +24,13 @@ need recovery/root/init.recovery.qcom.rc 'write /sys/kernel/boot_adsp/boot 1'
 need recovery/root/init.recovery.qcom.rc 'wait /sys/kernel/boot_adsp/ssr 10'
 need recovery/root/init.recovery.qcom.rc '/vendor/bin/hw/android.hardware.security.keymint-service-qti'
 need recovery/root/init.recovery.qcom.rc '/odm/bin/hw/android.hardware.weaver-service.nxp'
+need recovery/root/init.recovery.qcom.rc 'on property:twrp.phy110.predecrypt=1'
+need recovery/root/init.recovery.qcom.rc 'on property:twrp.phy110.crypto=ready'
 need recovery/root/init.recovery.qcom.rc 'service phy110-qseecomd /vendor/bin/qseecomd'
+forbid recovery/root/init.recovery.qcom.rc 'on property:twrp.modules.loaded=true'
+forbid recovery/root/init.recovery.wifi.rc 'on property:twrp.modules.loaded=true'
+need patches/bootable-recovery/0001-phy110-stock-predecrypt.patch 'twrp.phy110.predecrypt'
+need patches/bootable-recovery/0001-phy110-stock-predecrypt.patch 'PHY110 keeps stock vendor mounted'
 need recovery/root/init.recovery.qcom.rc 'service phy110-keymint-qti /vendor/bin/hw/android.hardware.security.keymint-service-qti'
 need recovery/root/init.recovery.qcom.rc 'setprop crypto.ready 1'
 need recovery/root/init.recovery.qcom.rc 'property:init.svc.phy110-keymint-qti=running'
@@ -66,3 +72,7 @@ else
 fi
 
 exit "$fail"
+
+# The no-blob ABI strategy requires the pinned upstream patch to be reproducible.
+need .github/workflows/build.yml 'git -C bootable/recovery apply --check "$PATCH"'
+need .github/workflows/build.yml 'bootable-recovery-local.patch'
