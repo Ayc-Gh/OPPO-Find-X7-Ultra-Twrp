@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: Apache-2.0
+# Wi-Fi is sourced from the currently installed ColorOS vendor stack.
+
+on property:twrp.modules.loaded=true
+    exec - root root -- /system/bin/sh /system/bin/load-phy110-modules.sh wifi
+
+on property:twrp.wifi.modules=ready
+    start vendor.qrtr-ns
+    start vendor.rmt_storage
+    start vendor.cnss-daemon
+    mkdir /tmp/recovery 0770 root root
+    mkdir /tmp/recovery/sockets 0770 root root
+    start vendor.wpa_supplicant
+
+# Compatibility triggers for older TWRP Wi-Fi frontends.
+on property:twrp.insmodko=1
+    exec - root root -- /system/bin/sh /system/bin/load-phy110-modules.sh wifi
+
+on property:qcomwlan.driver.load=true
+    exec - root root -- /system/bin/sh /system/bin/load-phy110-modules.sh wifi
+
+service vendor.qrtr-ns /vendor/bin/qrtr-ns -f
+    class core
+    user root
+    group root
+    capabilities NET_BIND_SERVICE
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.rmt_storage /vendor/bin/rmt_storage
+    class core
+    user root
+    group root
+    ioprio rt 0
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.cnss-daemon /vendor/bin/cnss-daemon -n -l
+    class main
+    user root
+    group root system inet net_admin wifi
+    capabilities NET_ADMIN
+    disabled
+    seclabel u:r:recovery:s0
+
+service vendor.wpa_supplicant /vendor/bin/hw/wpa_supplicant -Dnl80211 -iwlan0 -dd -O/tmp/recovery/sockets -c/vendor/etc/wifi/wpa_supplicant.conf
+    class main
+    user root
+    group root wifi inet net_admin
+    disabled
+    seclabel u:r:recovery:s0
+
+service phy110-dhcpcd /system/bin/dhcpcd wlan0 -B
+    class main
+    user root
+    group root wifi inet net_admin
+    disabled
+    oneshot
+    seclabel u:r:recovery:s0
