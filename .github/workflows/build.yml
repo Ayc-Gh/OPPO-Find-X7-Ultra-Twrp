@@ -122,7 +122,7 @@ jobs:
           export CCACHE_DIR="$HOME/.ccache"
           ccache -M 8G
           source build/envsetup.sh
-          lunch twrp_phy110 trunk_staging eng
+          lunch twrp_phy110 bp2a eng
           set -o pipefail
           m -j2 recoveryimage 2>&1 | tee "$RUNNER_TEMP/dist/build.log"
           ccache -s | tee "$RUNNER_TEMP/dist/ccache.txt"

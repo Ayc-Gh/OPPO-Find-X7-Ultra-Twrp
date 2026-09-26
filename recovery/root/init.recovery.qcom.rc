@@ -78,6 +78,7 @@ service phy110-qseecom-aidl /vendor/bin/hw/vendor.qti.hardware.qseecom@1.0-servi
     class hal
     user system
     group system drmrpc
+    interface aidl vendor.qti.hardware.qseecom
     disabled
     seclabel u:r:recovery:s0
 

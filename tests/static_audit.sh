@@ -12,7 +12,7 @@ need BoardConfig.mk 'BOARD_SUPER_PARTITION_SIZE := 17716740096'
 need BoardConfig.mk 'BOARD_QTI_DYNAMIC_PARTITIONS_SIZE := $(shell echo $$(($(BOARD_SUPER_PARTITION_SIZE) - 4194304)))'
 need BoardConfig.mk 'BOARD_RECOVERYIMAGE_PARTITION_SIZE := 104857600'
 need BoardConfig.mk 'TARGET_RECOVERY_DEVICE_MODULES += libinit_phy110'
-need AndroidProducts.mk 'twrp_phy110-trunk_staging-eng'
+need AndroidProducts.mk 'twrp_phy110-bp2a-eng'
 need common/BoardConfigCommon.mk 'TARGET_COPY_OUT_VENDOR := vendor'
 need common/BoardConfigCommon.mk 'TARGET_COPY_OUT_ODM := odm'
 need common/BoardConfigCommon.mk 'TW_EXCLUDE_APEX := true'
@@ -27,6 +27,7 @@ need recovery/root/init.recovery.qcom.rc '/odm/bin/hw/android.hardware.weaver-se
 need recovery/root/init.recovery.qcom.rc 'on property:twrp.phy110.predecrypt=1'
 need recovery/root/init.recovery.qcom.rc 'on property:twrp.phy110.crypto=ready'
 need recovery/root/init.recovery.qcom.rc 'service phy110-qseecomd /vendor/bin/qseecomd'
+need recovery/root/init.recovery.qcom.rc 'interface aidl vendor.qti.hardware.qseecom'
 forbid recovery/root/init.recovery.qcom.rc 'on property:twrp.modules.loaded=true'
 forbid recovery/root/init.recovery.wifi.rc 'on property:twrp.modules.loaded=true'
 need patches/bootable-recovery/0001-phy110-stock-predecrypt.patch 'twrp.phy110.predecrypt'
@@ -55,6 +56,9 @@ forbid_sources 'cpko.sh'
 forbid recovery/root/init.recovery.usb.rc '/config/usb_gadget/g2'
 forbid BoardConfig.mk 'TW_LOAD_VENDOR_MODULES'
 forbid BoardConfig.mk 'TARGET_RECOVERY_DEVICE_MODULES  :='
+need .github/workflows/build.yml 'lunch twrp_phy110 bp2a eng'
+need .github/workflows/build.yml 'git -C bootable/recovery apply --check "$PATCH"'
+need .github/workflows/build.yml 'bootable-recovery-local.patch'
 
 if find "$ROOT/recovery" -type f \( -name '*.so' -o -name '*.ko' \) -print -quit | grep -q .; then
     bad 'device tree contains embedded .so/.ko blob'
@@ -74,7 +78,3 @@ else
 fi
 
 exit "$fail"
-
-# The no-blob ABI strategy requires the pinned upstream patch to be reproducible.
-need .github/workflows/build.yml 'git -C bootable/recovery apply --check "$PATCH"'
-need .github/workflows/build.yml 'bootable-recovery-local.patch'

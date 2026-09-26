@@ -32,7 +32,7 @@ repo sync -c -j$(nproc)
 git -C bootable/recovery checkout 640eae012e65e9058baf8a8480ea5f0e4850fd3c
 git clone https://github.com/Ayc-Gh/OPPO-Find-X7-Ultra-Twrp.git device/oppo/phy110
 source build/envsetup.sh
-lunch twrp_phy110 trunk_staging eng
+lunch twrp_phy110 bp2a eng
 m recoveryimage
 ```
 
