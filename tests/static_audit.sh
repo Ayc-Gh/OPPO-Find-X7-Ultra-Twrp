@@ -35,6 +35,8 @@ need recovery/root/init.recovery.qcom.rc 'service phy110-keymint-qti /vendor/bin
 need recovery/root/init.recovery.qcom.rc 'setprop crypto.ready 1'
 need recovery/root/init.recovery.qcom.rc 'property:init.svc.phy110-keymint-qti=running'
 need recovery/root/system/bin/prepare-phy110-stock.sh 'setprop twrp.phy110.stock.crypto ready'
+need recovery/root/system/bin/prepare-phy110-stock.sh '/system_root/system/build.prop'
+need patches/bootable-recovery/0001-phy110-stock-predecrypt.patch '"/system_root"'
 forbid recovery/root/system/bin/prepare-phy110-stock.sh 'setprop crypto.ready 1'
 need recovery/root/init.recovery.wifi.rc 'service phy110-wpa-supplicant /vendor/bin/hw/wpa_supplicant'
 forbid recovery/root/init.recovery.qcom.rc 'service vendor.qseecomd /vendor/bin/qseecomd'

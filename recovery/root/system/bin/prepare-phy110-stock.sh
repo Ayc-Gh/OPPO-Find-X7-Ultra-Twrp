@@ -16,14 +16,16 @@ find_prop() {
     return 1
 }
 
-for p in /vendor /odm /vendor_dlkm /system_dlkm /metadata /mnt/vendor/persist; do
+for p in /system_root /vendor /odm /vendor_dlkm /system_dlkm /metadata /mnt/vendor/persist; do
     if ! grep -q " $p " /proc/mounts 2>/dev/null; then
         log "$p is not mounted"
     fi
 done
 
 vendor_spl=$(find_prop ro.vendor.build.security_patch /vendor/build.prop /vendor/default.prop)
-system_spl=$(find_prop ro.build.version.security_patch /system/build.prop /system/system/build.prop /system/etc/build.prop)
+system_spl=$(find_prop ro.build.version.security_patch \
+    /system_root/system/build.prop /system_root/build.prop \
+    /system/build.prop /system/system/build.prop /system/etc/build.prop)
 
 if [ -n "$vendor_spl" ]; then
     resetprop ro.vendor.build.security_patch "$vendor_spl"

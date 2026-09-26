@@ -26,8 +26,8 @@ diff --git a/partitionmanager.cpp b/partitionmanager.cpp
 +    // stack instead of embedding dated proprietary blobs in the Recovery
 +    // ramdisk. Mount the ABI and module partitions before asking init to start
 +    // recovery-domain wrappers for QSEE, KeyMint, Gatekeeper and Weaver.
-+    for (const char* path : {"/vendor", "/odm", "/vendor_dlkm", "/system_dlkm",
-+                             "/mnt/vendor/persist"}) {
++    for (const char* path : {"/system_root", "/vendor", "/odm", "/vendor_dlkm",
++                             "/system_dlkm", "/mnt/vendor/persist"}) {
 +        if (TWPartition* part = Find_Partition_By_Path(path);
 +            part && !part->Is_Mounted() && !part->Mount(Display_Error)) {
 +            LOGERR("PHY110 predecrypt: unable to mount %s\n", path);
