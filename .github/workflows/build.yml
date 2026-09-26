@@ -1,0 +1,174 @@
+name: Build PHY110 TWRP 16
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  MANIFEST_URL: https://github.com/TWRP-Test/platform_manifest_twrp_aosp.git
+  MANIFEST_BRANCH: twrp-16.0
+  MANIFEST_SHA: 6f074703a0ab31f22518b1a94331b358190237ba
+  RECOVERY_SHA: 640eae012e65e9058baf8a8480ea5f0e4850fd3c
+  DEVICE_PATH: device/oppo/phy110
+  PRODUCT: phy110
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+
+    steps:
+      - name: Reclaim runner disk
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL /usr/local/lib/android || true
+          sudo docker image prune --all --force || true
+          sudo apt-get clean
+          df -h
+
+      - name: Install build tools and zram
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y repo ccache lz4 cpio zram-tools
+          sudo modprobe zram || true
+          if [ -b /dev/zram0 ]; then
+            sudo swapoff /dev/zram0 2>/dev/null || true
+            sudo zramctl --reset /dev/zram0 2>/dev/null || true
+            sudo zramctl /dev/zram0 --algorithm zstd --size 8G
+            sudo mkswap /dev/zram0
+            sudo swapon -p 100 /dev/zram0
+          fi
+          free -h
+          df -h
+
+      - name: Clone and host-audit device tree
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone --depth=1 "https://github.com/${GITHUB_REPOSITORY}.git" "$RUNNER_TEMP/device-tree"
+          "$RUNNER_TEMP/device-tree/tests/run_host_audit.sh" | tee "$RUNNER_TEMP/host-audit.log"
+          git -C "$RUNNER_TEMP/device-tree" rev-parse HEAD | tee "$RUNNER_TEMP/device-tree.sha"
+
+      - name: Sync pinned TWRP upstream
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$HOME/twrp"
+          cd "$HOME/twrp"
+          repo init --depth=1 -u "$MANIFEST_URL" -b "$MANIFEST_BRANCH"
+          git -C .repo/manifests fetch --depth=1 origin "$MANIFEST_SHA"
+          git -C .repo/manifests checkout --detach "$MANIFEST_SHA"
+          for attempt in 1 2; do
+            if repo sync -c -j2 --force-sync --no-clone-bundle --no-tags; then
+              break
+            fi
+            [ "$attempt" -eq 2 ] && exit 1
+            sleep 15
+          done
+          echo "manifest HEAD=$(git -C .repo/manifests rev-parse HEAD)"
+          git -C bootable/recovery fetch --depth=1 origin "$RECOVERY_SHA"
+          git -C bootable/recovery checkout --detach "$RECOVERY_SHA"
+          test "$(git -C bootable/recovery rev-parse HEAD)" = "$RECOVERY_SHA"
+
+      - name: Install PHY110 tree and create source lock
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$HOME/twrp"
+          rm -rf "$DEVICE_PATH"
+          mkdir -p "$(dirname "$DEVICE_PATH")"
+          cp -a "$RUNNER_TEMP/device-tree" "$DEVICE_PATH"
+          rm -rf "$DEVICE_PATH/.git"
+          mkdir -p "$RUNNER_TEMP/dist"
+          repo manifest -r -o "$RUNNER_TEMP/dist/source-manifest.xml"
+          cp "$RUNNER_TEMP/device-tree.sha" "$RUNNER_TEMP/dist/device-tree.sha"
+          cp "$RUNNER_TEMP/host-audit.log" "$RUNNER_TEMP/dist/host-audit.log"
+          printf '%s\n' "$MANIFEST_SHA" > "$RUNNER_TEMP/dist/manifest-anchor.sha"
+          printf '%s\n' "$RECOVERY_SHA" > "$RUNNER_TEMP/dist/recovery.sha"
+
+      - name: Build recovery.img
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$HOME/twrp"
+          export ALLOW_MISSING_DEPENDENCIES=true
+          export USE_CCACHE=1
+          export CCACHE_DIR="$HOME/.ccache"
+          ccache -M 8G
+          source build/envsetup.sh
+          lunch twrp_phy110-eng
+          set -o pipefail
+          m -j2 recoveryimage 2>&1 | tee "$RUNNER_TEMP/dist/build.log"
+          ccache -s | tee "$RUNNER_TEMP/dist/ccache.txt"
+
+      - name: Audit built image
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$HOME/twrp"
+          IMG="out/target/product/${PRODUCT}/recovery.img"
+          test -s "$IMG"
+          SIZE=$(stat -c '%s' "$IMG")
+          test "$SIZE" -le 104857600
+          test "$SIZE" -gt 1048576
+          NAME="TWRP-16-PHY110-${GITHUB_RUN_ID}.img"
+          cp "$IMG" "$RUNNER_TEMP/dist/$NAME"
+          sha256sum "$RUNNER_TEMP/dist/$NAME" | tee "$RUNNER_TEMP/dist/$NAME.sha256"
+          file "$IMG" | tee "$RUNNER_TEMP/dist/image-file.txt"
+          printf 'size=%s\nlimit=%s\n' "$SIZE" 104857600 | tee "$RUNNER_TEMP/dist/image-size.txt"
+
+          UNPACK="out/host/linux-x86/bin/unpack_bootimg"
+          if [ -x "$UNPACK" ]; then
+            mkdir -p "$RUNNER_TEMP/unpacked"
+            "$UNPACK" --boot_img "$IMG" --out "$RUNNER_TEMP/unpacked" | tee "$RUNNER_TEMP/dist/unpack.log"
+            RAMDISK=$(find "$RUNNER_TEMP/unpacked" -maxdepth 1 -type f -name 'ramdisk*' | head -n1 || true)
+            if [ -n "$RAMDISK" ]; then
+              FILETYPE=$(file -b "$RAMDISK")
+              echo "$FILETYPE" | tee -a "$RUNNER_TEMP/dist/unpack.log"
+              case "$FILETYPE" in
+                *LZ4*) lz4 -d -f "$RAMDISK" "$RUNNER_TEMP/ramdisk.cpio" ;;
+                *gzip*) gzip -dc "$RAMDISK" > "$RUNNER_TEMP/ramdisk.cpio" ;;
+                *cpio*) cp "$RAMDISK" "$RUNNER_TEMP/ramdisk.cpio" ;;
+                *) cp "$RAMDISK" "$RUNNER_TEMP/ramdisk.cpio" ;;
+              esac
+              mkdir -p "$RUNNER_TEMP/ramdisk-root"
+              (cd "$RUNNER_TEMP/ramdisk-root" && cpio -idmu < "$RUNNER_TEMP/ramdisk.cpio")
+              test -f "$RUNNER_TEMP/ramdisk-root/init.recovery.qcom.rc"
+              test -f "$RUNNER_TEMP/ramdisk-root/init.recovery.usb.rc"
+              test -f "$RUNNER_TEMP/ramdisk-root/system/bin/load-phy110-modules.sh"
+              test -f "$RUNNER_TEMP/ramdisk-root/system/bin/prepare-phy110-stock.sh"
+              find "$RUNNER_TEMP/ramdisk-root" -maxdepth 3 -type f | sort > "$RUNNER_TEMP/dist/ramdisk-file-list.txt"
+            fi
+          fi
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$RUNNER_TEMP/dist"
+          IMG=$(ls TWRP-16-PHY110-${GITHUB_RUN_ID}.img)
+          TAG="build-${GITHUB_RUN_ID}"
+          gh release create "$TAG" \
+            "$IMG" "$IMG.sha256" source-manifest.xml host-audit.log image-size.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "PHY110 TWRP 16 build ${GITHUB_RUN_ID}" \
+            --notes "Pinned TWRP-Test upstream build for OPPO Find X7 Ultra PHY110. See attached SHA-256 and source-manifest.xml."
+
+      - name: Upload build bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: phy110-recovery-${{ github.run_id }}
+          path: ${{ runner.temp }}/dist/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
