@@ -1,0 +1,53 @@
+name: Import verified PHY110 release source
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    if: github.event_name == 'workflow_dispatch' || github.event.release.tag_name == 'phy110-20261010'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Import hash-verified source and align release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=$(git rev-parse HEAD)
+          tagsha=$(git ls-remote origin refs/tags/phy110-20261010 | cut -f1)
+          test -n "$tagsha"
+          pkg=$(mktemp -d)
+          gh release download phy110-20261010 --pattern PHY110-release-source.zip --dir "$pkg"
+          printf '%s  %s\n' '6946269ad03628f2e4a90f07694bf1d952c72e4c59929b66ac897fc2feaa15f2' "$pkg/PHY110-release-source.zip" | sha256sum --check
+          git rm -r --ignore-unmatch .
+          python3 - "$pkg/PHY110-release-source.zip" <<'PY'
+          import pathlib, sys, zipfile
+          with zipfile.ZipFile(sys.argv[1]) as z:
+              assert len(z.namelist()) == 517
+              assert z.testzip() is None
+              for n in z.namelist():
+                  p = pathlib.PurePosixPath(n)
+                  assert not p.is_absolute() and '..' not in p.parts and '.git' not in p.parts
+              z.extractall('.')
+          PY
+          python3 tests/test_spl.py
+          g++ -std=c++17 -Wall -Wextra -Werror -Itests/stubs tests/libinit_harness.cpp -o /tmp/phy110-libinit-test
+          /tmp/phy110-libinit-test
+          bash -n tools/build-phy110.sh
+          bash -n recovery/root/vendor/bin/override-spl.sh
+          bash -n recovery/root/system/bin/variant-script.sh
+          git config core.autocrlf false
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          git diff --cached --check
+          git commit -m "Replace device tree with built PHY110 candidate and verified AVB release evidence"
+          git push --atomic origin HEAD:refs/heads/main HEAD:refs/tags/phy110-20261010 --force-with-lease=refs/heads/main:"$base" --force-with-lease=refs/tags/phy110-20261010:"$tagsha"
