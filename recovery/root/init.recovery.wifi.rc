@@ -1,0 +1,2 @@
+# PHY110 validation build: no WLAN services or /data Wi-Fi writes.
+# Keep inert even if an upstream init file imports it by wildcard.

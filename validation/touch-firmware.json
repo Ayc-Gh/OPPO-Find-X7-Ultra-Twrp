@@ -1,0 +1,9 @@
+{
+  "model": "PHY110",
+  "device_path": "/odm/firmware/tp/22825/FW_S3910_BOE_HBP.img",
+  "tree_path": "recovery/root/odm/firmware/tp/22825/FW_S3910_BOE_HBP.img",
+  "size": 195546,
+  "sha256": "420711cddc08b269bffa863941aa58c7869e1f038dd38be1de2bc25393420cc8",
+  "method": "Read-only USB ADB root cat and on-device SHA256 comparison",
+  "redistribution": "Local device-specific build only; no remote publication performed"
+}

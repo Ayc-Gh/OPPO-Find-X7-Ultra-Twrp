@@ -1,0 +1,83 @@
+PHY110 increment, 2026-10-10
+
+This fork is restricted to the observed PHY110 / project 22111.
+It is not a generic image for all devices previously listed by the parent tree.
+The product name/path stays sm86xx to retain the parent's build layout.
+
+Implemented from read-only observations:
+- super = 17716740096 bytes; both QTI groups = 17712545792 bytes.
+- Recovery remains v4, kernel-free, LZ4, and capped at 104857600 bytes.
+- Shipping API and VNDK = 34; platform = Android 16.
+- Initial SPL = 2026-08-01, followed by read-only active-slot SPL preparation.
+- Match data fstab fscompress and backlight maximum 4094.
+- Synaptics S3910 HBP modules replace the nonexistent goodix_core selection.
+- Include the observed BOE S3910 HBP firmware from /odm/firmware; its local copy
+  matches the phone SHA256. See validation/touch-firmware.json.
+- Update the build plugin allowlist for the pinned upstream Soong migration.
+- Retain modules.dep-based dependency loading and enable vendor_boot module loading.
+- Bootconfig project ID has priority; malformed/overflow values do not throw.
+- Unverified model identity prevents device-specific SPL preparation.
+- SPL reads mount EROFS read-only or ext4 with ro,noload.
+- No forced unmount or recursive cleanup of temporary mount directories.
+- KeyMint/Gatekeeper startup waits for SPL readiness.
+- Disable WLAN init triggers and network ADB defaults.
+- Preserve debuggerd/strace module additions previously overwritten by :=.
+
+Deliberate limitations:
+- USB ADB still uses the original ro.adb.secure=0; changing recovery key
+  provisioning is deferred to a separate tested change. No claim that USB
+  authentication has been hardened in this patch.
+- Existing proprietary HAL binaries are retained. Matching VINTF versions alone
+  does not validate binary dependencies, secure-world compatibility or decryption.
+- Read-only SHA256 comparison of the three main KeyMint/Gatekeeper/ssgtzd
+  executables plus 136 bundled vendor libraries found 73 matching files,
+  22 different files and 44 files not read at the same phone path. All three
+  main executables match exactly. Missing/relocated or recovery-modified libraries
+  are not, by themselves, proof of incompatibility. See blob-comparison.json.
+- The model guard is not a complete block against all TWRP flashing actions.
+- Physical touch binding was checked, but recovery-side module loading was not.
+- Full Android recoveryimage compilation and static image checks passed.
+  No device boot, touch, decryption or flashing was tested.
+- The observed properties do not prove the ROM's original source or provenance.
+
+Validation:
+Host tests cover 14 SPL scenarios, including both slots, erofs/ext4, malformed
+dates, missing block devices, partial read failure, unmount failure and fastbootd.
+Host C++ harness compiles actual libinit source against mocked Android APIs and
+exercises 13 identity/region cases; it is not an Android ABI/full-build test.
+
+Build:
+source-lock.json pins candidate manifest and Recovery commits. All remaining
+dependency revisions are frozen in validation/resolved-manifest.xml from the
+successful build. The bootstrap script initially syncs manifest branches; select
+this resolved manifest before syncing when reproducing the recorded sources.
+Run tools/build-phy110.sh in a Linux build environment with Android prerequisites.
+The script requires a new directory, copies this local tree, retains build logs,
+exports the resolved manifest and checks image size. It has no phone commands.
+
+Local full-build environment:
+Android build prerequisites were installed in a dedicated Ubuntu 24.04 WSL2
+distribution, PHY110-Build-20261010, with its native VHDX on Windows D:.
+The build has a dedicated 12 GiB swap file and uses /android as its checkout.
+An earlier loopback filesystem over DrvFS encountered host I/O errors. Its
+filesystem was checked, and only repository data was migrated to native storage.
+Full Git object checks passed for all 392 projects before further checkout/build.
+Final compilation and image-check results are recorded separately after completion.
+No phone writes are involved.
+
+Completed image validation:
+recovery-PHY110-20261010.img: 104857600 bytes; SHA256 c9caa210b26b00da58b1ff957a5a97993ce755e876b7bc28b8c0d4be270e155a
+Android header v4; zero kernel; legacy LZ4; AArch64 recovery executable.
+1387 ramdisk entries; device preparation scripts are executable.
+Observed touch firmware hash matches; PHY110 guard and network ADB setting present.
+AVB footer/descriptor/hash checks passed. Algorithm NONE: this image is unsigned.
+No OEM signature or locked-bootloader acceptance is claimed.
+SOONG_GOMEMLIMIT=8GiB and final -j8 compilation were used on the local build host.
+14 SPL scenarios and 13 host libinit scenarios passed; actual libinit compiled
+as part of the full Android build. All 392 repository object checks passed.
+Original recovery_b backup passed embedded-key AVB signature and content hash
+checks; this does not independently establish bootloader trust/state.
+
+After build: temporary VM settings restored; dedicated 12 GiB swap deactivated.
+Native checkout/cache retained. Old private loop image is unmounted, but retained
+because loop0 still has a kernel reference; it was not deleted while referenced.

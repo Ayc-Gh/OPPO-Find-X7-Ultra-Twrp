@@ -1,0 +1,30 @@
+{
+  "image": "recovery-PHY110-20261010-signed.img",
+  "size": 104857600,
+  "partition_size": 104857600,
+  "sha256": "d15c8272fec97e00a8a945c12f6eed727442d7c59895d58b1fdfe78f9c414c82",
+  "header_version": 4,
+  "kernel_size": 0,
+  "ramdisk_size": 52553229,
+  "header_size": 1584,
+  "os_version_encoded": 536871336,
+  "ramdisk_entries": 1387,
+  "ramdisk_magic": "02214c18",
+  "touch_firmware_sha256": "420711cddc08b269bffa863941aa58c7869e1f038dd38be1de2bc25393420cc8",
+  "recovery_executable": "system/bin/recovery",
+  "avb_footer": {
+    "major": 1,
+    "minor": 0,
+    "original_size": 52559872,
+    "vbmeta_offset": 52559872,
+    "vbmeta_size": 2432
+  },
+  "validation": "Static structure/content checks passed; no device boot/decryption validation",
+  "flashed": false,
+  "signature_algorithm": "SHA256_RSA4096",
+  "signature_verified_with_published_key": true,
+  "oem_signature": false,
+  "public_key_spki_sha256": "1e4d95682a37a423e03991420863bf14d8055ade3c1434f23b7fac54b97e9ef8",
+  "original_payload_unchanged": true,
+  "boot_tested": false
+}

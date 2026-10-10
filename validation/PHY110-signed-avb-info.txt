@@ -1,0 +1,27 @@
+Footer version:           1.0
+Image size:               104857600 bytes
+Original image size:      52559872 bytes
+VBMeta offset:            52559872
+VBMeta size:              2432 bytes
+--
+Minimum libavb version:   1.0
+Header Block:             256 bytes
+Authentication Block:     576 bytes
+Auxiliary Block:          1600 bytes
+Public key (sha1):        4c3a18daa4261962e5d9b525a92e96587c98eae7
+Algorithm:                SHA256_RSA4096
+Rollback Index:           0
+Flags:                    0
+Rollback Index Location:  0
+Release String:           'avbtool 1.3.0'
+Descriptors:
+    Hash descriptor:
+      Image Size:            52559872 bytes
+      Hash Algorithm:        sha256
+      Partition Name:        recovery
+      Salt:                  fb2863759cf4c769f8431368367f019373ec7c75c78db281c975405ea3873c2f
+      Digest:                64e29047c9f62985c8409ff9fea6ea6e0da5547c1fe68a7b4eff28767dbae357
+      Flags:                 0
+    Prop: com.android.build.recovery.fingerprint -> 'oplus/twrp_sm86xx/sm86xx:16/BP2A.250605.031.A2/eng.builde:eng/test-keys'
+    Prop: com.android.build.boot.os_version -> '16'
+    Prop: com.android.build.boot.security_patch -> '2026-08-01'

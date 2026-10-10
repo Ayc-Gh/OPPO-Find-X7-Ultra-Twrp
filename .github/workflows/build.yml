@@ -1,0 +1,27 @@
+name: PHY110 host checks
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  host-checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell and failure-path checks
+        run: |
+          bash -n tools/build-phy110.sh
+          bash -n recovery/root/vendor/bin/override-spl.sh
+          bash -n recovery/root/system/bin/variant-script.sh
+          python3 tests/test_spl.py
+      - name: Host libinit behavior checks
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -Itests/stubs tests/libinit_harness.cpp -o /tmp/phy110-libinit-test
+          /tmp/phy110-libinit-test
+      - name: Whitespace check
+        run: git diff --check

@@ -1,0 +1,9 @@
+{
+  "device_tree_base": "81061909b76fc6dac1a1ae5c3ddb04b1d4a3e027",
+  "manifest_url": "https://github.com/TWRP-Test/platform_manifest_twrp_aosp.git",
+  "manifest_commit": "6f074703a0ab31f22518b1a94331b358190237ba",
+  "recovery_url": "https://github.com/TWRP-Test/android_bootable_recovery.git",
+  "recovery_commit": "0188692582ced33c34b85a236b53cba5a3e4b487",
+  "status": "Full Android build and static image validation passed; candidate is not boot-tested",
+  "dependency_lock": "validation/resolved-manifest.xml records all 392 project revisions from this build; use it for source revision reproduction."
+}

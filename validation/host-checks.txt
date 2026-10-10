@@ -1,0 +1,17 @@
+Validation completed on 2026-10-10 in Ubuntu under WSL.
+
+PASS: bash syntax checks for SPL script, variant script and build entry point.
+PASS: 14 mocked SPL scenarios across both slots, filesystem fallback, failure
+      cleanup, unavailable/malformed input, unsupported model and fastbootd.
+PASS: actual libinit source compiled with g++ -std=c++17 -Wall -Wextra -Werror
+      against mocked Android APIs; 13 model/region scenarios passed.
+
+The shell test environment replaces mount/unmount/property APIs with mocks;
+no real filesystem was mounted. Host C++ tests do not verify Android linking.
+
+Full build entry point was attempted and stopped at prerequisite checking:
+Missing build prerequisite: repo
+No Android source sync or recovery image build was started.
+
+Device accesses were read-only. No recovery boot, decryption test or flashing
+was performed. Source-lock.json is an uncompiled candidate upstream selection.
