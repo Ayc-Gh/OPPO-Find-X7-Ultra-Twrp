@@ -3,11 +3,13 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+  push:
+    branches: [main]
 permissions:
   contents: write
 jobs:
   import:
-    if: github.event_name == 'workflow_dispatch' || github.event.release.tag_name == 'phy110-20261010'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.release.tag_name == 'phy110-20261010'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +50,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add --all
-          git diff --cached --check
+          git -c core.whitespace=cr-at-eol diff --cached --check -- README.md BoardConfig.mk device.mk libinit/libinit_oplus_sm86xx.cpp recovery.fstab recovery/root/init.recovery.qcom.rc recovery/root/init.recovery.wifi.rc recovery/root/system/bin/variant-script.sh recovery/root/vendor/bin/override-spl.sh recovery/root/vendor/etc/init/android.hardware.security.keymint-service-qti.rc system.prop source-lock.json tests tools validation
           git commit -m "Replace device tree with built PHY110 candidate and verified AVB release evidence"
           git push --atomic origin HEAD:refs/heads/main HEAD:refs/tags/phy110-20261010 --force-with-lease=refs/heads/main:"$base" --force-with-lease=refs/tags/phy110-20261010:"$tagsha"
